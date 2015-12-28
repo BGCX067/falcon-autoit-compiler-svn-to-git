@@ -1,0 +1,87 @@
+
+
+/// ~=== FileCore (Builtin Functions) ===~
+
+
+//FileOpen - Builtin Function (filename [, mode = (0,1,2)])
+vr fFILEOPEN(vr filename, vr mode=vr(0))
+{
+	fSETERROR();
+
+	FILE* fptr;
+	vr Ret;
+
+	//Open mode in correct way:
+	switch ( mode.Short() ){
+		case 0:									// Read
+			fptr = fopen(filename.String(), "rb");
+			break;
+
+		case 1:									// Write (append)
+			fptr = fopen(filename.String(), "a+b");
+			if (fptr)
+				fseek(fptr, 0, SEEK_END);
+			break;
+
+		case 2:									// Write (erase contents)
+			fptr = fopen(filename.String(), "w+b");
+			break;
+
+		default:
+			return vr(-1);
+	}
+
+	if(fptr == NULL)
+		return vr(-1);
+
+	Ret.type = VAR_RESTYPE;
+	Ret.Resource_id = _Allocate_Resource(Resources::RESTYPE_FILE);
+
+	(*Resources::AllocatedResources[Ret.Resource_id]).fileptr = fptr;
+
+	return Ret;
+}
+
+
+//FileRead - Builtin Function (filename/handle , charcount)
+vr fFILEREAD(vr filename, vr chars=vr(0))
+{
+	fSETERROR();
+
+	vr Ret;
+
+	if((filename.type == VAR_RESTYPE) && ((*Resources::AllocatedResources[filename.Resource_id]).type == Resources::RESTYPE_FILE)) 
+	{ 			//Pre-allocated file
+
+		Ret.type = VAR_STRTYPE;
+		Ret.databuff = new char[chars.Short() + 2];
+		Ret.databuffsize = chars.Short() + 2;
+		size_t Len = fread(Ret.databuff, 1, chars.Short(), (*Resources::AllocatedResources[filename.Resource_id]).fileptr);
+		Ret.databuff[Len] = '\0';
+
+		return Ret;
+	}else{ //Filename
+		FILE* fptr = fopen(filename.String(), "rb");
+		if(fptr){
+			Ret.type = VAR_STRTYPE;
+			Ret.databuff = new char[chars.Short() + 2];
+			Ret.databuffsize = chars.Short() + 2;
+			size_t Len = fread(Ret.databuff, 1, chars.Short(), fptr);
+			Ret.databuff[Len] = '\0';
+			fclose(fptr);
+			return Ret;
+		}
+	}
+
+	fSETERROR(1);
+	return vr("");
+}
+
+
+
+
+///~=== End FileCore (Builtin Functions) ===~
+
+
+
+

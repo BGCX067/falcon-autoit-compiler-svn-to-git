@@ -1,0 +1,148 @@
+#summary Explanation of how the compiler operates.
+#labels Phase-Implementation,Phase-Design
+
+= Introduction =
+
+The Compilation of the target script is broken down into a number of distinct 'nano passes', in light of the recommendations of <a href='http://pdf.aminer.org/000/310/110/a_nanopass_infrastructure_for_compiler_education.pdf'>this</a> paper.
+
+ These are:
+  * Lexing (<a href='http://en.wikipedia.org/wiki/Tokenization'>tokenisation</a>) - Separates each logical element of the script into tokens.
+  * Disambiguation - Distinguishes unprefixed variables, and function pointers from other identifiers.
+  * Parsing - A parser reads in the input tokens, determines meaning from token order, recursion, and structure, then builds a hierarchical representation of the script (Abstract Syntax Tree) in memory.
+  * Symboltable - Recursively walks the parse tree, building a table of all variables and functions. Autoit's dynamic scoping is translated into statically scoped references as much as possible.
+  * Code Generation - The correct code generation backend (currently only C++) recursively walks the AST to generate code. In the case of a C++ backend, MinGW is invoked to produce the final executable.
+
+
+
+
+
+
+----
+
+
+
+
+
+
+== Lexing ==
+
+For more information, see: http://en.wikipedia.org/wiki/Lexical_analysis
+
+
+
+
+
+
+
+
+
+
+== Disambiguation ==
+
+This pass was added after the latest AutoIt Alpha release announced that the '$' prefix for variables is now optional. This works by checking all unknown tokens against the identifiers for user and builtin functions. If there is no match, it must be a variable identifier, and it is tagged accordingly.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+== Parsing ==
+
+Complicated. This compiler uses the <a href='http://en.wikipedia.org/wiki/Recursive_descent_parser '> recursive decent parser</a> algorithm, and the shunting yard algorithm is used for handling expression precedence. An Abstract Syntax Tree (AST) is built from parsing the semantics of the tokens.
+
+For example:
+{{{
+$variable = ($variable3 + 5) * 6
+}}}
+
+Is translated into this AST:
+{{{
+Assignment (=): $variable
+*
+     6
+     +
+       5
+       $variable3
+}}}
+
+The ASTis a 'bytecode' of sorts, represented in a tree-like hierarchy with context free grammar.
+
+This Context-free representation is ideal, because analysis and code generation passes can be done with mutually exclusive virtual methods, operating on each element of the AST recursively. This representation is a core element in the operation of the compiler.
+
+No semantic or syntatical validation is done at this stage. Thus, invalid scripts may crash the compiler. There are no plans to add code validation; it is the responsibility of the user to validate and test their code prior to compilation.
+
+
+
+
+
+
+
+
+
+
+
+
+
+== Symboltable ==
+
+This is a recursive function which creates a table of all variable and function identifiers, and translates AutoIt's dynamic scope into static scope.
+
+The second part of this pass is the scoping algorithm; the most difficult part of this compiler. 
+
+
+This is my best explanation of how it works:
+
+=== Global Code ===
+All Variable references and assignments are assumed to be global scope and tagged accordingly.
+
+=== Functions ===
+Action upon meeting an assignment or variable reference:
+  # If the variable has already been assigned previously in the function, tag it as a local variable. Else, it is a global variable.
+  # If the code flow reaches a branch operation (IF, SWITCH, CASE) then produce a local copy of the symbol table for each separate branch, and scope variables in each branch separately by recursion. This means that adjacent branches (whose scopes are different) do not inherit changes in scope from other adjacent branches, as it should be.
+  # As code flow leaves a branch, new symbols are back-propergated into the symbol table of the branch encompassing it. Changes in scope are inherited from the first code branch in a branch operation.
+
+
+However, it is not (and cannot ever be) perfect. Poorly written code can create scoping ambiguities, leading to incorrect translation. ~~The compiler will error/warn on detecting these conditions.~~ TODO.
+
+Consider this code:
+{{{
+$v = 0
+Func1()
+ConsoleWrite($v)
+
+Func Func1()
+   if Random(0,1) then
+      local $v
+   else
+      $v = 0
+   Endif
+   $v = 4
+EndFunc
+}}}
+
+This code will not be compiled correctly. The reason for this is that the scope of the variable '$v' depends on the branch of control flow which the program takes, which cannot be determined at compile time. The compiler will silently assume that the first branch (local $v) is the correct scope, and thus assume that the last assignment in the function ($v = 4) always refers to the local scope. Thus, this program will always print 4, regardless of the result of random().
+
+The way to avoid this problem is to write properly, where the scope of variables does not change between local and global across branches. Only poorly written code has this problem, and can be easily fixed by a more rigid variable naming scheme. 
+
+
+This is the slowest pass of the whole compiler, with every scoping, copy, and back-propergate operation using a linear scan with O(n) efficiency.
+
+
+
+
+
+
+
+
+== Code Generation ==
+
+This is a simple recursive function which outputs an element of code for each logical element of the parse tree.

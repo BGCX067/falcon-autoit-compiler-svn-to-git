@@ -1,0 +1,29 @@
+/***************************************
+* FALCON runtime core version 0.1.51
+* exc. Variants
+*
+* inc. Builtin/macro exports
+* inc. Resource system
+*
+* todo: memory pool + allocator
+* Written by Hyperzap, 2012
+***************************************/
+
+
+#undef UNICODE
+
+//Hackz to make certian things work correctly.
+#define WIN32_LEAN_AND_MEAN
+#define _WIN32_WINNT 0x501
+#define _WIN32_IE    0x0500
+#include <Windows.h>
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
+
+#include <Shlwapi.h>
+#include <new>
+#include <shlobj.h>

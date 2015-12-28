@@ -1,0 +1,5 @@
+SYMBOL TABLE :=====================~
+
+Var: LIT in domain: GLOBAL
+Var: MAEO in domain: GLOBAL
+Var: R in domain: GLOBAL

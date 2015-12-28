@@ -1,0 +1,10 @@
+@ProgramFilesDir @CommonFilesDir @MyDocumentsDir @AppDataCommonDir
+@DesktopCommonDir @DocumentsCommonDir @FavoritesCommonDir @ProgramsCommonDir
+@StartMenuCommonDir @StartupCommonDir @AppDataDir @DesktopDir @FavoritesDir
+@ProgramsDir @StartMenuDir @StartupDir @CR @LF @CRLF @ERROR @EXTENDED
+
+!ConsoleWrite 1 1
+!Sleep 1 1
+!FileOpen 1 2
+!FileRead 2 2
+!SetError 1 3

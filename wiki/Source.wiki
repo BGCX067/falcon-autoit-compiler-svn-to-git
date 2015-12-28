@@ -1,0 +1,17 @@
+#summary Summary for accessing the source.
+#labels Phase-Implementation
+
+
+
+The project is licensed under the GNU license. Source is available upon request.
+
+Simply send me (twitchyliquid64) a PM on http://autoitscript.com/forum
+
+Please tell me:
+ * Why you want the source
+ * What you intend to do with it (HINT: 'Read it' is a valid answer)
+ * Your email address and age
+
+
+I'm trying to screen the idiots here, like griefers on a minecraft server. If you are not a complete idiot, you will have no trouble being granted access to the source.
+Of course, if you are a forum MVP/developer/well-known, you will be granted access immediately.

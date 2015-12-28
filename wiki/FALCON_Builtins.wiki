@@ -1,0 +1,148 @@
+#summary Documentation for the built-in functions available in FALCON.
+#labels Phase-Design,Phase-Implementation
+
+= Introduction =
+
+Instead of implementing over 400 built-in functions like AutoIt does, it is possible that AutoIt code can be used to implement AutoIt's functions.
+
+----
+== Function Reference ==
+
+
+=== DLL/Export Functions ===
+
+Syntax for return types and parameter types:
+|| *Character* || *Type* || *C equivalent* ||
+|| p || Pointer || void* ||
+|| c || character || char ||
+|| C || unsigned character || unsigned char ||
+|| s || short int || short ||
+|| S || unsigned short int || unsigned short ||
+|| i || integer || int ||
+|| I || unsigned integer || unsigned int ||
+|| j || long integer || long int ||
+|| J || unsigned long integer || unsigned long int ||
+|| l || 64bit integer || long long ||
+|| L || unsigned 64bit integer || unsigned long long ||
+|| f || floating point number || float ||
+|| d || double precision float || double ||
+|| Z || constant character string || const char* ||
+|| v || No Parameter || void ||
+
+For example, If our DLL function took 2 ints and a string as parameters, we would pass "iip" as the third parameter of FalconDllFuncRegister().
+
+
+*_FalconDllFuncRegister_ :*
+{{{
+FalconDllFuncRegister( callingconvention, returntype, paramtypes)
+}}}
+
+
+
+
+*_FalconDllOpen_ :*
+{{{
+FalconDllOpen( Dllpath)
+}}}
+
+
+
+
+*_FalconDllGetSymbol_ :*
+{{{
+FalconDllGetSymbol( Dll, symbolname)
+}}}
+
+Dll - Return value of DllOpen()
+
+symbolname - String representing the symbol of the DLL function.
+
+
+
+
+
+
+*_FalconDllCall_ :*
+{{{
+FalconDllCall( Function, Symbol, [ param1, param2, ... paramn] )
+}}}
+
+Function - Return value of FalconDllFuncRegister()
+
+Symbol - Return Value of FalconDllGetSymbol()
+
+
+
+
+
+
+
+=== Variable Management functions ===
+*_FalconVarGetType_ :*
+{{{
+FalconVarGetType( var)
+}}}
+Returns an integer representing the type of the variable. See table below for values.
+
+
+
+
+
+
+=== Advanced internal functions functions ===
+* Do NOT use this for multithreading! This is for implementing functions like AdLib().
+
+*_FalconAssertInterrupt_ :*
+{{{
+FalconAssertInterrupt( funcptr)
+}}}
+Notifies the main thread, of an interrupt to be serviced. This is an advanced function, and should NOT be used if you don't know what your doing. Furthermore, interrupts cannot be queued, so if an interrupt is waiting to be serviced, and you call this function, you will break shit.
+
+
+
+
+*_FalconLaunchThread_ :*
+{{{
+FalconLaunchThread( funcptr, [param ])
+}}}
+Creates a new thread, which will execute the code in the function ptr. A handle to the thread is returned.
+
+
+
+
+
+*_FalconTerminateThread_ :*
+{{{
+FalconLaunchThread( threadhnd)
+}}}
+Terminates a created thread. Pass this function the return value of FalconLaunchThread().
+
+
+
+
+
+
+
+
+=== Basic Functions ===
+
+*_FalconStdoutWrite_ :*
+{{{
+FalconStdoutWrite( data)
+}}}
+
+*_FalconStderrWrite_ :*
+{{{
+FalconStderrWrite( data)
+}}}
+
+*_FalconStdinRead_ :*
+{{{
+FalconStdinRead( [flag])
+}}}
+
+Flag Parameter:
+
+||*flag*||*meaning*||
+||1||block if no data||
+||2||non-blocking||

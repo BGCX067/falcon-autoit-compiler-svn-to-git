@@ -1,0 +1,130 @@
+
+//Runtime Structure Definitions
+
+
+
+
+//Internal abstraction for storing and handling a global resource (something allocated by OS or runtime)
+//This is used at runtime for storing things like file handles and windows, and making sure they are destroyed
+//on exit even if the script doesnt.
+namespace Resources{
+
+	enum{
+		RESTYPE_FILE,
+		RESTYPE_WIN,
+		RESTYPE_STRUCT,
+		RESTYPE_CHILDPROC,
+		RESTYPE_DUMMY
+	};
+
+	struct Resource{
+		int type;
+		int id;
+
+		union{
+			HWND winhnd;
+			FILE* fileptr;
+		};
+	};
+
+	static int allocated_resource_ids = 0;//counter for resource id (internal, also corresponds to resource vector)
+	static std::vector<Resource*> AllocatedResources;
+};
+
+
+
+
+
+
+
+
+
+//Global data relating to the running of the program and its resources as a whole.
+//Mainly storing process handles and handles to things like the ProgressOn() window etc
+namespace GlobalData{
+
+	HINSTANCE				Program_Inst = NULL;
+
+	//Main window + GUI system
+	HWND					Program_WinHnd = NULL;
+	HWND					Program_WinEditHnd = NULL;
+	HICON					Program_Icon;
+	HICON					Program_IconSmall;
+
+	//Only initialised on rightclick to the tray
+	HMENU					Program_TrayMenu;
+
+	HWND					ProgressWin_WinHnd = NULL;
+	HWND					ProgressWin_progbarHnd = NULL;
+	HWND					ProgressWin_LabtopHnd = NULL;
+	HWND					ProgressWin_LabbottomHnd = NULL;
+
+	HWND					SplashWin_Hnd = NULL;
+	HBITMAP				SplashWin_Bitmap = NULL;
+
+	//Set to true when all worker threads are commanded to terminate
+	bool					WorkerThreads_ExitFlag = false;
+};
+
+//Resource or control identifiers
+#define EXIT_TRAY_MENUCONTROL WM_USER+1
+#define TRAY_EVENT WM_USER+2
+
+
+
+
+
+
+
+
+//Event handling - Windows message pump, AutoIT Event and TrayEvent Queues
+namespace Events{
+
+
+
+	enum EVENT_TYPES{ //Event Structure types
+		EVTTYPE_WINMSG,
+		EVTTYPE_HOTKEY,
+		EVTTYPE_ADLIB
+	};
+
+
+	struct Event{
+		EVENT_TYPES type;
+
+		struct WinMsgData{
+			HWND hWnd;
+			UINT iMsg;
+			WPARAM wParam;
+			LPARAM lParam;
+		};
+		struct HotKeyData{
+			char hotkey;
+			void* targetfunc;
+		};
+		struct AdLibCallData{
+			int millis_delay;
+			void* targetfunc;
+		};
+
+
+		union{
+			WinMsgData* WinMsgInfo;
+			AdLibCallData* AdLibInfo;
+			HotKeyData* HotKeyInfo;
+		};
+	};
+
+
+
+
+	std::queue<Event*> InterruptQueue;//ALL Events (interrupting ie: AdLib, GUIOnEvent())
+	std::queue<Event*> GuiEventQueue; //All GUI Events (Non Interrupting)
+	std::queue<Event*> TrayEventQueue;//Queue for the TrayGetMsg()
+	bool Queues_Threadlock = false;
+	bool Is_Interrupt_Waiting = false;
+};
+
+
+//End Runtime Structure definitions
+

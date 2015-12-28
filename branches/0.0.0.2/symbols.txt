@@ -1,0 +1,7 @@
+SYMBOL TABLE :=====================~
+
+Var: COOL in domain: GLOBAL
+Var: HACK in domain: GLOBAL
+Var: FLOAT in domain: GLOBAL
+Var: TEST in domain: GLOBAL
+Var: MATE in domain: GLOBAL

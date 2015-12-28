@@ -1,0 +1,25 @@
+Tables are indexed by their ID. Each is used for a different purpose.
+
+GLOBAL TABLES:
+Vect_ExecutionContexts: (int threadid, Struct ExecContext)
+Vect_Structures: (int index, Struct Struturedef)
+Vect_GlobalResources: (int id, Struct Resource)
+
+
+Table Entry Definitions:
+Struct ExecContext:
+int threadid
+variant @error
+variant @extended
+options bitlist
+
+Struct Resource:
+int id
+int type
+ptr fileptr
+hnd winhnd
+
+Struct Struturedef:
+int id
+int num elements
+Vect_StructureElement

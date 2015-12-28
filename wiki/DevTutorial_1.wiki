@@ -1,0 +1,50 @@
+#summary Introduction into developing for FALCON: Writing AutoIt built-ins
+#labels Phase-Implementation,Featured
+
+IMPORTANT!: This is a draft Dev tutorial to show the process in which AutoItfunc dev would occur. The functionality for this to actually be done is not yet implemented.
+
+
+= Introduction =
+
+In this tutorial I will introduce you into the process of developing AutoIt's built-in functions. Its very straight forward; and you write all your code in AutoIt (remember, FALCON translates all this to C++!).
+
+So we will write a built-in for the AutoIt function _ConsoleWrite_.
+
+
+=== Step 1: Setting up ===
+
+First of all, go to C:\FAC\includes and open up autoitfuncs.au3. This is the include file where we keep all the Code that powers AutoIt built-ins.
+
+So first we fire up the AutoIt help file to make sure we are implementing our new function right. We take note of the parameters, return data, @error, and @extended data, as we will need to replicate this functionality.
+
+
+=== Step 2: Getting Started ===
+
+Start off writing the function definition.
+{{{
+Func ConsoleWrite( $data)
+EndFunc
+}}}
+
+All good so far. We have named the function correctly, and we have the parameters right.
+One nice trick you might want to do is declare the parameter as a ByRef, as this prevents copying the data before it is used in the function, hence making it faster.
+{{{
+Func ConsoleWrite(Byref $data)
+Endfunc
+}}}
+
+
+=== Step 3: Finish ===
+
+Finally, we implement the function:
+{{{
+Func ConsoleWrite(Byref $data)
+    FalconStdoutWrite( $data)
+    return StringLen($data)
+Endfunc
+}}}
+
+The function FalconStdoutWrite is a builtin function of this compiler. A complete list of functions can be found at [FALCON_Builtins].
+
+Thats It! We can now test out new Built-in using the Compiler.
+If you wrote a built-in which no one else has written, be sure to post it in the AutoIt forum, so that I can be added to the list.

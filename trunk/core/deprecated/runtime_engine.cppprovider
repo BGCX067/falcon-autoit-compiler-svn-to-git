@@ -1,0 +1,227 @@
+
+
+
+/******************************************************************************
+* FALCON RUNTIME ENGINE version 0.1
+*
+* encapsulates: global resource management, error handling, process signalling
+* and callbacks, asynchronous events, threading & synchronization.
+*
+* TODO: 
+* -Allow deallocated globalresource spots to be reallocated
+* -Use a proper icon.
+* -Everything.
+*
+* Written by Hyperzap, 2012
+* inspiration from v3.1 Autoit source
+******************************************************************************/
+
+//forward dec
+void _Runtime_Shutdown(int code);
+
+
+//Message loop callback (from msg pump)
+LRESULT CALLBACK _Runtime_WinMsgHandler (HWND hWnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
+{
+
+	static UINT s_uTaskbarRestart;
+
+	// Is it an internal message? If yes, process
+	if (hWnd == GlobalData::Program_WinHnd || GlobalData::Program_WinHnd == NULL)
+	{
+		switch (iMsg)
+		{
+			// Window initial creation
+			case WM_CREATE:
+				_DEBUG_MSG("==> MsgHandler: WM_CREATE");
+				s_uTaskbarRestart = RegisterWindowMessage("TaskbarCreated");
+				return 0;
+
+			/* Some form of timer has been triggered - check it out
+			case WM_TIMER:
+				HandleTimer(hWnd, wParam, lParam);
+
+				return 0; 
+			*/
+
+
+			// Window close clicked, if this returns 0 then user will be prevented from closing
+			case WM_CLOSE:
+				_DEBUG_MSG("==> MsgHandler: WM_CLOSE");
+
+				return 0;
+
+			case WM_DESTROY:
+				_DEBUG_MSG("==> MsgHandler: WM_DESTROY");
+				return 0;
+
+			case WM_SETFOCUS: //Window get focus
+				_DEBUG_MSG("==> MsgHandler: WM_SETFOCUS");
+				SetFocus(GlobalData::Program_WinEditHnd);
+				return 0;
+			
+			case WM_SIZE: //resize
+				_DEBUG_MSG("==> MsgHandler: WM_SIZE");
+				MoveWindow(GlobalData::Program_WinEditHnd, 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
+				return 0;
+
+
+			case WM_COMMAND:
+				if(LOWORD(wParam) == EXIT_TRAY_MENUCONTROL)//Clicked exit
+					_Runtime_Shutdown(1);
+				break;
+
+
+			case TRAY_EVENT:
+				if(lParam == WM_RBUTTONUP)
+				{
+					_DEBUG_MSG("==> MsgHandler: Tray Right Click");
+					GlobalData::Program_TrayMenu = CreatePopupMenu();
+					POINT pt;
+					InsertMenu(GlobalData::Program_TrayMenu, EXIT_TRAY_MENUCONTROL, MF_STRING | MF_BYPOSITION, EXIT_TRAY_MENUCONTROL, "Exit");
+					SetForegroundWindow(GlobalData::Program_WinHnd);
+					GetCursorPos(&pt);
+					SetForegroundWindow(GlobalData::Program_WinHnd);
+					TrackPopupMenuEx(GlobalData::Program_TrayMenu, TPM_LEFTALIGN | TPM_LEFTBUTTON,
+						pt.x, pt.y, GlobalData::Program_WinHnd, NULL);
+				}else{
+					_DEBUG_MSG("==> MsgHandler: Unhandled Tray Event");
+				}
+				break;
+
+
+			default:
+				#ifdef DEBUG
+					std::cout << iMsg << " ==> MsgHandler: Unhandled Event\n";
+				#endif
+				_DEBUG_MSG("");
+
+		}
+	}
+
+	return DefWindowProc(hWnd, iMsg, wParam, lParam);
+
+}
+
+
+/* 		=== Called to process windows message pump ===
+ - Called from sleep(), *Wait() functions and Variant::=operator in version 0.0.0.5
+ - Should be called from backend thread only in future, and mainthread should only
+   check for interrupts
+*/
+void _Runtime_ChkMsgEvents(void)
+{
+	MSG		msg;
+	while (PeekMessage( &msg, NULL, 0U, 0U, PM_REMOVE ))
+	{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+	}
+}
+
+
+
+//Allocate a space in the table for a global resource.
+int _Allocate_Resource(int type)
+{
+	Resources::Resource* res = new Resources::Resource;
+	res->type = type;
+	res->id = Resources::allocated_resource_ids;
+	Resources::allocated_resource_ids++;
+
+	Resources::AllocatedResources.push_back(res);
+	return res->id;
+
+	return -1;//Failure
+}
+
+
+
+
+
+void _Runtime_Shutdown(int code)
+{
+	exit(code);
+}
+
+int _Runtime_init(void)
+{
+	Resources::AllocatedResources.reserve(3200);//Reserve 3200 spots for global resources. (not needed, but meh)
+
+	//Get Application Instance handle (console apps dont get it from entrypoint)
+	GlobalData::Program_Inst = GetModuleHandle(NULL);
+	//Loadup our icons (just use some defaults for now)
+	ExtractIconEx("SHELL32.DLL", 8, &GlobalData::Program_Icon, &GlobalData::Program_IconSmall, 1);
+
+
+	//Setup the default GUI Class
+	WNDCLASSEX	wndClass;
+	HBRUSH		hBrush	= GetSysColorBrush(COLOR_BTNFACE);
+	HCURSOR		hCursor = LoadCursor(NULL, IDC_ARROW);
+
+	wndClass.cbSize			= sizeof(wndClass);
+	wndClass.style			= CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+	wndClass.cbClsExtra		= 0;
+	wndClass.cbWndExtra		= 0;
+	wndClass.hInstance		= GlobalData::Program_Inst;
+	wndClass.hCursor		= hCursor;
+	wndClass.hbrBackground	= hBrush;
+	wndClass.lpszMenuName	= NULL;
+	wndClass.lpszClassName	= "AutoIt v3";
+	wndClass.hIcon		= GlobalData::Program_Icon;
+	wndClass.hIconSm		= GlobalData::Program_IconSmall;
+	wndClass.lpfnWndProc	= _Runtime_WinMsgHandler;
+	RegisterClassEx(&wndClass);
+
+
+
+	//Create the default window and controls required for tray etc
+	GlobalData::Program_WinHnd = CreateWindow(  "AutoIt v3", "AutoIt v3", WS_OVERLAPPEDWINDOW,
+							CW_USEDEFAULT, CW_USEDEFAULT, 300, 100, NULL, NULL, GlobalData::Program_Inst, NULL);
+	(*Resources::AllocatedResources[_Allocate_Resource(Resources::RESTYPE_WIN)]).winhnd = GlobalData::Program_WinHnd;//Save it here anyway
+
+
+	GlobalData::Program_WinEditHnd = CreateWindow("edit", NULL, WS_CHILD | WS_VISIBLE | WS_HSCROLL |
+					WS_VSCROLL | WS_BORDER | ES_LEFT | ES_MULTILINE | ES_AUTOHSCROLL |
+					ES_AUTOVSCROLL | ES_READONLY, 0, 0, 0, 0,
+					GlobalData::Program_WinHnd, (HMENU)1, GlobalData::Program_Inst, NULL);
+
+	ShowWindow(GlobalData::Program_WinHnd, SW_HIDE);
+	ShowWindow(GlobalData::Program_WinHnd, SW_HIDE);
+
+
+
+	//Create Tray Icon
+	NOTIFYICONDATA	nic;
+	nic.cbSize				= sizeof(NOTIFYICONDATA);
+	nic.hWnd				= GlobalData::Program_WinHnd;
+	nic.uID				= 0;
+	nic.uFlags				= NIF_MESSAGE|NIF_ICON|NIF_TIP;
+	nic.uCallbackMessage		= TRAY_EVENT;
+	nic.hIcon				= GlobalData::Program_Icon;
+	strcpy(nic.szTip, "Falcon Executable - Running");
+	Shell_NotifyIcon(NIM_ADD, &nic);
+
+	return 0;
+}
+
+
+
+
+
+
+
+void _Runtime_fatal_error(char* msg)
+{
+	std::cout << "Runtime Error!: " << msg << '\n';
+	exit(1);
+}
+
+
+/******************************************************************************
+* END FALCON RUNTIME ENGINE version 0.1
+******************************************************************************/
+
+
+
+

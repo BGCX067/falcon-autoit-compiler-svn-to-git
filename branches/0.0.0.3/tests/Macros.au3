@@ -1,0 +1,8 @@
+ConsoleWrite(@ProgramFilesDir & @CRLF)
+ConsoleWrite(@CommonFilesDir & @CRLF)
+ConsoleWrite(@MyDocumentsDir & @CRLF)
+ConsoleWrite(@AppDataCommonDir & @CRLF)
+ConsoleWrite(@DesktopCommonDir & @CRLF)
+ConsoleWrite(@DocumentsCommonDir & @CRLF)
+ConsoleWrite(@FavoritesCommonDir & @CRLF)
+ConsoleWrite(@CR & @LF)

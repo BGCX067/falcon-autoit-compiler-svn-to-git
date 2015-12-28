@@ -1,0 +1,149 @@
+
+///////////////////////////////////////////////////////////////////////////////
+// Util_RegReadString()
+//
+// Read a string from a registry key
+//
+///////////////////////////////////////////////////////////////////////////////
+
+void Util_RegReadString(HKEY hKey, LPCTSTR lpSubKey, LPCTSTR lpValueName, DWORD dwBufLen, char *szValue )
+{
+        HKEY    hRegKey;
+
+        // Make sure the return value is blank just in case we error
+        szValue[0] = '\0';
+
+        if (RegOpenKeyEx(hKey, lpSubKey, 0, KEY_QUERY_VALUE, &hRegKey) != ERROR_SUCCESS)
+                return;
+
+        RegQueryValueEx(hRegKey, lpValueName, NULL, NULL, (LPBYTE)szValue, &dwBufLen);
+
+        RegCloseKey(hRegKey);
+
+} // Util_RegReadString()
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/// BUILTINS
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//Builtin function :: <ret: int> ConsoleWrite(<text>)
+vr fCONSOLEWRITE(vr text)
+{
+	std::cout << text.String();
+	int siz = strlen(text.String());
+	return vr(siz);
+}
+
+
+
+//Builtin function :: <ret: none> Sleep(<int>)
+vr fSLEEP(vr time)
+{
+	Sleep(time.Short());
+	return vr();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/// MACROS
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//MACRO: @CRLF
+vr mCRLF()
+{
+	return vr("\r\n");
+}
+//MACRO: @CR
+vr mCR()
+{
+	return vr("\r");
+}
+//MACRO: @LF
+vr mLF()
+{
+	return vr("\n");
+}
+//MACRO: @PROGRAMFILESDIR
+vr mPROGRAMFILESDIR()
+{
+	char temp[MAX_PATH+1];
+	Util_RegReadString(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion", "ProgramFilesDir", MAX_PATH, temp);
+	return vr(temp);
+}
+//MACRO: @COMMONFILESDIR
+vr mCOMMONFILESDIR()
+{
+	char temp[MAX_PATH+1];
+	Util_RegReadString(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion", "CommonFilesDir", MAX_PATH, temp);
+	return vr(temp);
+}
+//MACRO: @MYDOCUMENTSDIR
+vr mMYDOCUMENTSDIR()
+{
+	char temp[MAX_PATH+1];
+	SHGetSpecialFolderPath(HWND_DESKTOP, temp, CSIDL_PERSONAL, FALSE);
+	return vr(temp);
+}
+//MACRO: @APPDATACOMMONDIR
+vr mAPPDATACOMMONDIR()
+{
+	char temp[MAX_PATH+1];
+    Util_RegReadString(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Common AppData", MAX_PATH, temp);
+	return vr(temp);
+}
+//MACRO: @DESKTOPCOMMONDIR
+vr mDESKTOPCOMMONDIR()
+{
+	char temp[MAX_PATH+1];
+    Util_RegReadString(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Common Desktop", MAX_PATH, temp);
+    if(temp == '\0')
+		Util_RegReadString(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Desktop", MAX_PATH, temp);
+	return vr(temp);
+}
+//MACRO: @DOCUMENTSCOMMONDIR
+vr mDOCUMENTSCOMMONDIR()
+{
+	char temp[MAX_PATH+1];
+    Util_RegReadString(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Common Documents", MAX_PATH, temp);
+	return vr(temp);
+}
+//MACRO: @FAVORITESCOMMONDIR
+vr mFAVORITESCOMMONDIR()
+{
+	char temp[MAX_PATH+1];
+    Util_RegReadString(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Common Favorites", MAX_PATH, temp);
+    if(temp == '\0')
+		Util_RegReadString(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Favorites", MAX_PATH, temp);
+	return vr(temp);
+}

@@ -1,0 +1,21 @@
+#summary An introduction to the intended use and design of the project.
+#labels Featured,Phase-Design,Phase-Deploy
+
+== Introduction ==
+
+FALCON is a translating nanopass compiler.  It translates AutoIT code (that is normally interpreted by an intepreter) to native machine code (which is simply executed by the CPU). Currently, this is achieved through a C++ code generation backend, which then is compiled by a modified version of minGW. x86 and (custom)bytecode backends are planned.
+
+
+== Design Goals ==
+  * *To prevent the automated decompilation of compiled AutoIT scripts.*
+  * To remove the interpreter backend of script execution, potentially improving performance.
+
+
+
+== Usage ==
+
+FALCON is supposed to be really easy to use. Download the latest installer from the downloads tab on this site. Run the installer, and wait while it downloads the compiler and the necessary backend.
+
+*NOTE:* Part of the installer ATM is broken, and thus will require you to unzip some files on your own. Follow the instructions present in the installer, as they appear.
+
+~~Alternatively, you can use the command line.~~ Not Implemented.
